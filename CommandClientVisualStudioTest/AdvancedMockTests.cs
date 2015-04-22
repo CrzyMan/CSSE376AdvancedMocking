@@ -78,11 +78,17 @@ namespace CommandClientVisualStudioTest
             byte[] metaDataLength = { 2, 0, 0, 0 };
             byte[] metaData = { 10, 0 };
 
+            byte[] expected = { 0, 0, 0, 0, 9, 0, 0, 0, 49, 50, 55, 46, 48, 46, 48, 46, 49, 2, 0, 0, 0, 10, 0 };
+
             CMDClient client = new CMDClient(null, "Bogus network name");
 
             typeof(CMDClient).GetField("networkStream", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(client, fakeStream);
 
             client.SendCommandToServerUnthreaded(command);
+
+            byte[] result = new byte[fakeStream.Length];
+            fakeStream.Read(result, 0, (int)fakeStream.Length);
+            Assert.AreEqual(expected.Length, result.Length);
       }
 
         [TestMethod]
