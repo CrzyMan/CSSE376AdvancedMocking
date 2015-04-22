@@ -98,6 +98,7 @@ namespace CommandClientVisualStudioTest
             byte[] metaData = { 10, 0 };
 
             System.Threading.Semaphore fakeSemaphore = mocks.DynamicMock<System.Threading.Semaphore>();
+
             using (mocks.Ordered())
             {
                 Expect.Call(fakeSemaphore.WaitOne()).Return(true);
@@ -140,10 +141,14 @@ namespace CommandClientVisualStudioTest
             byte[] metaDataLength = { 2, 0, 0, 0 };
             byte[] metaData = { 10, 0 };
 
+            System.Threading.Semaphore fakeSemaphore = mocks.DynamicMock<System.Threading.Semaphore>();
+
             using (mocks.Ordered())
             {
+                Expect.Call(fakeSemaphore.WaitOne()).Return(true);
                 fakeStream.Flush();
                 LastCall.On(fakeStream).Throw(new Exception());
+                Expect.Call(fakeSemaphore.Release()).Return(0);
             }
             mocks.ReplayAll();
             CMDClient client = new CMDClient(null, "Bogus network name");
@@ -151,17 +156,14 @@ namespace CommandClientVisualStudioTest
             // we need to set the private variable here
 
             typeof(CMDClient).GetField("networkStream", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(client, fakeStream);
+            typeof(CMDClient).GetField("semaphore", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(client, fakeSemaphore);
 
             try
             {
                 client.SendCommandToServerUnthreaded(command);
-                mocks.VerifyAll();
-                Assert.Fail("Not supposed to do this part");
             }
-            catch (Exception e)
-            {
-
-            } 
+            catch (Exception e) { }
+            mocks.VerifyAll();
         }
     }
 }
